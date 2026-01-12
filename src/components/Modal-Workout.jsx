@@ -1,20 +1,21 @@
 import React from 'react'
 import WorkoutCard from './WorkoutCard'
 import { format } from 'date-fns'
-import { workoutProgram as training_plan } from '../utils/defaultProgram.js'
 
 export default function ModalWorkout({
   selectedWorkout,
   savedWorkouts,
+  trainingPlan,
+  exerciseDescriptions,
   typeMap,
   handleComplete,
   handleSave,
-  setShowExerciseDescription,
+  setModalContent,
 }) {
   if (!selectedWorkout) return null;
 
   const workoutDateString = format(selectedWorkout.date, 'yyyy-MM-dd');
-  const trainingPlan = training_plan[selectedWorkout.planIndex];
+  const workoutPlan = trainingPlan?.[selectedWorkout.planIndex];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/50">
@@ -22,13 +23,14 @@ export default function ModalWorkout({
         <WorkoutCard
           key={selectedWorkout.workoutIndex}
           workoutIndex={selectedWorkout.workoutIndex}
-          trainingPlan={trainingPlan}
+          trainingPlan={workoutPlan}
           type={typeMap[selectedWorkout.planIndex] || 'Workout'}
           savedWeights={savedWorkouts?.[workoutDateString]?.weights}
           savedDoneStatus={savedWorkouts?.[workoutDateString]?.doneStatus}
           handleComplete={handleComplete}
           handleSave={handleSave}
-          setShowExerciseDescription={setShowExerciseDescription}
+          setShowExerciseDescription={setModalContent}
+          exerciseDescriptions={exerciseDescriptions}
         />
       </div>
     </div>

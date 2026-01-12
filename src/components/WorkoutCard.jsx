@@ -1,5 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react'
-import { exerciseDescriptions } from '../utils/defaultProgram'
+import React, { useState, useContext } from 'react'
 import { WorkoutContext } from './WorkoutContext'
 
 export default function WorkoutCard(props) {
@@ -10,12 +9,12 @@ export default function WorkoutCard(props) {
 		handleSave,
 		trainingPlan,
 		savedDoneStatus,
-		setShowExerciseDescription
+		setShowExerciseDescription,
+		exerciseDescriptions
 	} = props;
 	
 	const {
 		weights,
-		updateExerciseField,
 	} = useContext(WorkoutContext);
 	
 	const [doneStatus, setDoneStatus] = useState(savedDoneStatus || {});
@@ -28,57 +27,24 @@ export default function WorkoutCard(props) {
 	}
 	
 	function ExerciseInput({ exercise }) {
-		const { updateExerciseField, weights } = useContext(WorkoutContext);
+		const { weights } = useContext(WorkoutContext);
 		const entry = weights[exercise.name] || {};
-		
-		const [localWeight, setLocalWeight] = useState(entry.weight ?? exercise.weight ?? '');
-		const [localSets, setLocalSets] = useState(entry.sets ?? exercise.sets ?? '');
-		const [localReps, setLocalReps] = useState(entry.reps ?? exercise.reps ?? '');
-		
-		useEffect(() => {
-			const entry = weights[exercise.name] || {};
-			const repsValue = entry.reps ?? exercise.reps ?? '';
-			setLocalWeight(entry.weight ?? exercise.weight ?? '');
-			setLocalSets(entry.sets ?? exercise.sets ?? '');
-			setLocalReps(repsValue === 'NA' ? '♾️' : repsValue);
-		}, [weights, exercise.name, exercise.sets, exercise.reps, exercise.weight]);
+		const setsValue = entry.sets ?? exercise.sets ?? '';
+		const repsRaw = entry.reps ?? exercise.reps ?? '';
+		const repsValue = repsRaw === 'NA' ? '??' : repsRaw;
+		const weightValue = entry.weight ?? exercise.weight ?? '';
 
 		return (
 			<>
 				<p className='text-sm flex items-center justify-center'>
-					<input
-					  type="text"
-					  value={localSets}
-					  onChange={(e) => setLocalSets(e.target.value)}
-					  onBlur={() => updateExerciseField(exercise.name, 'sets', localSets)}
-					  className='w-full px-2 py-1 bg-slate-700 dark:bg-white rounded-md text-sm text-center border border-slate-600 dark:border-gray-200 text-slate-100 dark:text-gray-900 focus:outline-none focus:border-indigo-500'
-					  placeholder="Sets"
-					/>
+					<span>{setsValue}</span>
 				  </p>
 				  <p className='text-sm flex items-center justify-center'>
-					<input
-					  type="text"
-					  value={localReps}
-					  onChange={(e) => setLocalReps(e.target.value)}
-					  onBlur={() => {
-						const val = localReps.trim()
-						const newVal = val === '♾️' ? 'NA' : val
-						updateExerciseField(exercise.name, 'reps', newVal)
-						setLocalReps(newVal === 'NA' ? '♾️' : newVal)
-					  }}
-					  className='w-full px-2 py-1 bg-slate-700 dark:bg-white rounded-md text-sm text-center border border-slate-600 dark:border-gray-200 text-slate-100 dark:text-gray-900 focus:outline-none focus:border-indigo-500'
-					  placeholder="Reps"
-					/>
+					<span>{repsValue}</span>
 				  </p>
 				  <p className='text-sm flex items-center justify-center'>
 					{exercise.weight === 'NA' ? null : (
-						<input
-						  value={localWeight}
-						  onChange={(e) => setLocalWeight(e.target.value)}
-						  onBlur={() => updateExerciseField(exercise.name, 'weight', localWeight)}
-						  className='w-full px-2 py-1 bg-slate-700 dark:bg-white rounded-md text-sm text-center border border-slate-600 dark:border-gray-200 text-slate-100 dark:text-gray-900 focus:outline-none focus:border-indigo-500'
-						  placeholder="Weight"
-						/>
+						<span>{weightValue}</span>
 					)}
 				  </p>
 				  <p className='text-sm flex items-center justify-center'>
@@ -93,7 +59,24 @@ export default function WorkoutCard(props) {
 		)
 	}
 	
-	const { workout = [], warmup = [], pickOne = [], supersets = [], finisher = [], gravitron = [], optional = [] } = trainingPlan
+	const { workout = [], warmup = [], pickOne = [], supersets = [], finisher = [], gravitron = [], optional = [] } = trainingPlan || {}
+
+	const sectionEntries = Array.isArray(trainingPlan?.sections)
+		? trainingPlan.sections.map((section, index) => ({
+			key: `${section.name}-${index}`,
+			label: section.name,
+			isSuperset: !!section.isSuperset,
+			items: section.items || [],
+		}))
+		: [
+			{ key: 'warmup', label: 'Warmup', isSuperset: false, items: warmup },
+			{ key: 'pickOne', label: 'Pick One', isSuperset: false, items: pickOne },
+			{ key: 'workout', label: 'Workout', isSuperset: false, items: workout },
+			{ key: 'gravitron', label: 'Gravitron', isSuperset: false, items: gravitron },
+			{ key: 'supersets', label: 'Supersets', isSuperset: true, items: supersets },
+			{ key: 'finisher', label: 'Finisher', isSuperset: false, items: finisher },
+			{ key: 'optional', label: 'Optional', isSuperset: false, items: optional },
+		];
 	
 	const iconMap = {
 		"Arm Focus": 'fa-dumbbell',
@@ -115,28 +98,70 @@ export default function WorkoutCard(props) {
 				</div>
 			</div>
 			
-			{[
-				{ label: "Warmup", data: warmup },
-				{ label: "Pick One", data: pickOne },
-				{ label: "Workout", data: workout },
-				{ label: "Gravitron", data: gravitron }
-			].map(({ label, data }) => (
-				data.length > 0 && (
-					<div className='grid grid-cols-[4fr_1fr_2fr_2fr_1fr] gap-2 md:gap-4 w-full text-center mt-4 text-sm md:text-base' key={label}>
-						<div className='flex items-center text-left col-span-1 font-bold'><h4>{label}</h4></div>
+			{sectionEntries.map((section) => {
+				if (!section.items || section.items.length === 0) return null;
+				const header = (
+					<>
+						<div className='flex items-center text-left col-span-1 font-bold'>
+							<h4>{section.label}</h4>
+						</div>
 						<h6 className="text-center font-bold">Sets</h6>
 						<h6 className="text-center font-bold">Reps</h6>
 						<h6 className="text-center font-bold">Weight</h6>
 						<h6 className="text-center font-bold">Done</h6>
+					</>
+				);
 
-						{data.map((exercise, index) => (
-							<React.Fragment key={`${label}-${index}`}>
+				if (section.isSuperset) {
+					return (
+						<div
+							key={section.key}
+							className='grid grid-cols-[4fr_1fr_2fr_2fr_1fr] gap-2 md:gap-4 w-full text-center mt-4 text-sm md:text-base'
+						>
+							{header}
+							{section.items.map((group, groupIndex) => (
+								<React.Fragment key={`${section.key}-group-${groupIndex}`}>
+									{group.map((exercise, i) => (
+										<React.Fragment key={`${section.key}-item-${groupIndex}-${i}`}>
+											<div className='flex items-center text-left gap-2 col-span-1'>
+												<button onClick={() => {
+													const entry = exerciseDescriptions?.[exercise.name];
+													const description = typeof entry === 'string' ? entry : entry?.text;
+													const images = Array.isArray(entry?.images) ? entry.images : [];
+
+													setShowExerciseDescription({
+														name: exercise.name,
+														description,
+														images
+													});
+												}} className='text-indigo-400 dark:text-indigo-600 hover:text-indigo-300 dark:hover:text-indigo-500 transition-colors'>
+													<i className="fa-regular fa-circle-question"></i>
+												</button>
+												<p>{groupIndex + 1}.{i + 1} {exercise.name}</p>
+											</div>
+											<ExerciseInput exercise={exercise} />
+										</React.Fragment>
+									))}
+								</React.Fragment>
+							))}
+						</div>
+					);
+				}
+
+				return (
+					<div
+						key={section.key}
+						className='grid grid-cols-[4fr_1fr_2fr_2fr_1fr] gap-2 md:gap-4 w-full text-center mt-4 text-sm md:text-base'
+					>
+						{header}
+						{section.items.map((exercise, index) => (
+							<React.Fragment key={`${section.key}-${index}`}>
 								<div className='flex items-center text-left gap-2 col-span-1'>
 									<button onClick={() => {
-										const entry = exerciseDescriptions[exercise.name];
+										const entry = exerciseDescriptions?.[exercise.name];
 										const description = typeof entry === 'string' ? entry : entry?.text;
-										const images = Array.isArray(entry?.images) ? entry.images : []
-										
+										const images = Array.isArray(entry?.images) ? entry.images : [];
+
 										setShowExerciseDescription({
 											name: exercise.name,
 											description,
@@ -151,113 +176,8 @@ export default function WorkoutCard(props) {
 							</React.Fragment>
 						))}
 					</div>
-				)
-			))}
-			
-			{/* Supersets Section */}
-			{supersets.length > 0 && (
-				<div className='grid grid-cols-[4fr_1fr_2fr_2fr_1fr] gap-2 md:gap-4 w-full text-center mt-4 text-sm md:text-base'>
-					<div className='flex items-center text-left col-span-1 font-bold'>
-						<h4>Supersets</h4>
-					</div>
-					<h6 className="text-center font-bold">Sets</h6>
-					<h6 className="text-center font-bold">Reps</h6>
-					<h6 className="text-center font-bold">Weight</h6>
-					<h6 className="text-center font-bold">Done</h6>
-					
-					{supersets.map((group, groupIndex) => (
-						<React.Fragment key={`superset-${groupIndex}`}>
-							{group.map((exercise, i) => (
-								<React.Fragment key={`superset-${groupIndex}-${i}`}>
-									<div className='flex items-center text-left gap-2 col-span-1'>
-										<button onClick={() => {
-											const entry = exerciseDescriptions[exercise.name];
-											const description = typeof entry === 'string' ? entry : entry?.text;
-											const images = Array.isArray(entry?.images) ? entry.images : []
-											
-											setShowExerciseDescription({
-												name: exercise.name,
-												description,
-												images
-											});
-										}} className='text-indigo-400 dark:text-indigo-600 hover:text-indigo-300 dark:hover:text-indigo-500 transition-colors'>
-											<i className="fa-regular fa-circle-question"></i>
-										</button>
-										<p>{groupIndex + 1}.{i + 1} {exercise.name}</p>
-									</div>
-									<ExerciseInput exercise={exercise} />
-								</React.Fragment>
-							))}
-						</React.Fragment>
-					))}
-				</div>
-			)}
-			
-			{/* Finisher Section */}
-			{finisher.length > 0 && (
-			  <div className='grid grid-cols-[4fr_1fr_2fr_2fr_1fr] gap-2 md:gap-4 w-full text-center mt-4 text-sm md:text-base' key="Finisher">
-				<div className='flex items-center text-left col-span-1 font-bold'><h4>Finisher</h4></div>
-				<h6 className="text-center font-bold">Sets</h6>
-				<h6 className="text-center font-bold">Reps</h6>
-				<h6 className="text-center font-bold">Weight</h6>
-				<h6 className="text-center font-bold">Done</h6>
-
-				{finisher.map((exercise, index) => (
-				  <React.Fragment key={`Finisher-${index}`}>
-					<div className='flex items-center text-left gap-2 col-span-1'>
-					  <button onClick={() => {
-							const entry = exerciseDescriptions[exercise.name];
-							const description = typeof entry === 'string' ? entry : entry?.text;
-							const images = Array.isArray(entry?.images) ? entry.images : []
-							
-							setShowExerciseDescription({
-								name: exercise.name,
-								description,
-								images
-							});
-						}} className='text-indigo-400 dark:text-indigo-600 hover:text-indigo-300 dark:hover:text-indigo-500 transition-colors'>
-							<i className="fa-regular fa-circle-question"></i>
-					  </button>
-					  <p>{index + 1}. {exercise.name}</p>
-					</div>
-					<ExerciseInput exercise={exercise} />
-				  </React.Fragment>
-				))}
-			  </div>
-			)}
-			
-			{/* Optional Section */}
-			{optional.length > 0 && (
-			  <div className='grid grid-cols-[4fr_1fr_2fr_2fr_1fr] gap-2 md:gap-4 w-full text-center mt-4 text-sm md:text-base' key="Optional">
-				<div className='flex items-center text-left col-span-1 font-bold'><h4>Optional</h4></div>
-				<h6 className="text-center font-bold">Sets</h6>
-				<h6 className="text-center font-bold">Reps</h6>
-				<h6 className="text-center font-bold">Weight</h6>
-				<h6 className="text-center font-bold">Done</h6>
-
-				{optional.map((exercise, index) => (
-				  <React.Fragment key={`Optional-${index}`}>
-					<div className='flex items-center text-left gap-2 col-span-1'>
-					  <button onClick={() => {
-							const entry = exerciseDescriptions[exercise.name];
-							const description = typeof entry === 'string' ? entry : entry?.text;
-							const images = Array.isArray(entry?.images) ? entry.images : []
-							
-							setShowExerciseDescription({
-								name: exercise.name,
-								description,
-								images
-							});
-						}} className='text-indigo-400 dark:text-indigo-600 hover:text-indigo-300 dark:hover:text-indigo-500 transition-colors'>
-							<i className="fa-regular fa-circle-question"></i>
-					  </button>
-					  <p>{index + 1}. {exercise.name}</p>
-					</div>
-					<ExerciseInput exercise={exercise} />
-				  </React.Fragment>
-				))}
-			  </div>
-			)}
+				);
+			})}
 			
 			{/* Buttons */}
 			<div className='flex flex-col sm:flex-row gap-4 mt-8 w-full max-w-sm mx-auto'>

@@ -1,20 +1,27 @@
 {
-  "name": "brogram",
+  "name": "workout-tracker",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:server": "node server/server.js",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "db:seed": "node scripts/seed-db.js",
+    "preview": "vite preview",
+    "start": "node server/server.js"
   },
+  "proxy": "http://localhost:3001",
   "dependencies": {
     "@tailwindcss/cli": "^4.1.11",
     "@tailwindcss/vite": "^4.1.11",
     "date-fns": "^4.1.0",
+    "express": "^5.1.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react'
-import WorkoutCard from './WorkoutCard'
-import { workoutProgram as training_plan } from '../utils/defaultProgram.js'
 import Modal from './Modal.jsx'
 import ModalWorkout from './Modal-Workout.jsx'
 import { startOfMonth, endOfMonth, addDays, getDay, format, eachDayOfInterval, isSameDay } from 'date-fns'
@@ -8,7 +6,9 @@ import { startOfMonth, endOfMonth, addDays, getDay, format, eachDayOfInterval, i
 export default function Grid() {
 	const [selectedWorkout, setSelectedWorkout] = useState(null);
 	const [savedWorkouts, setSavedWorkouts] = useState(null);
-	const [showExerciseDescription, setShowExerciseDescription] = useState(null);
+	const [modalContent, setModalContent] = useState(null);
+	const [trainingPlan, setTrainingPlan] = useState(null);
+	const [exerciseDescriptions, setExerciseDescriptions] = useState({});
 	const today = new Date();
 	
 	const allWorkoutDays = getWorkoutDaysInMonth(today);
@@ -122,13 +122,39 @@ export default function Grid() {
 		const merged = { ...rest, ...week1 };
 		setSavedWorkouts(merged);
 	}, []);
+
+	useEffect(() => {
+		let isMounted = true;
+		const fetchWorkoutData = async () => {
+			try {
+				const response = await fetch('/api/workout-data');
+				if (!response.ok) {
+					throw new Error(`Failed to load workout data (${response.status})`);
+				}
+				const data = await response.json();
+				if (!isMounted) return;
+				setTrainingPlan(data.workoutProgram || {});
+				setExerciseDescriptions(data.exerciseDescriptions || {});
+			} catch (error) {
+				console.error(error);
+				if (isMounted) {
+					setTrainingPlan({});
+				}
+			}
+		};
+
+		fetchWorkoutData();
+		return () => {
+			isMounted = false;
+		};
+	}, []);
 	
 	useEffect(() => {
-		document.body.style.overflow = selectedWorkout || showExerciseDescription ? 'hidden' : 'auto';
+		document.body.style.overflow = selectedWorkout || modalContent ? 'hidden' : 'auto';
 		return () => {
 			document.body.style.overflow = 'auto';
 		};
-	}, [selectedWorkout, showExerciseDescription]);
+	}, [selectedWorkout, modalContent]);
 	
 	useEffect(() => {
 		const adjustFontSize = () => {
@@ -159,7 +185,7 @@ export default function Grid() {
 		};
 	}, [workoutDaysToRender]);
 	
-	if (!savedWorkouts) {
+	if (!savedWorkouts || !trainingPlan) {
         return null;
     }
 	
@@ -175,10 +201,10 @@ export default function Grid() {
 	return (
 		<div className='flex flex-col items-center p-4 bg-slate-900 dark:bg-gray-100 text-slate-100 dark:text-gray-900 font-inter'>
 			{/* Modal for exercise description */}
-			{showExerciseDescription && (
+			{modalContent && (
 					<Modal
-						showExerciseDescription={showExerciseDescription}
-						handleCloseModal={() => setShowExerciseDescription(null)} 
+						content={modalContent}
+						handleCloseModal={() => setModalContent(null)} 
 					/>
 			)}
 			
@@ -204,10 +230,12 @@ export default function Grid() {
 					<ModalWorkout
 						selectedWorkout={selectedWorkout}
 						savedWorkouts={savedWorkouts}
+						trainingPlan={trainingPlan}
+						exerciseDescriptions={exerciseDescriptions}
 						typeMap={typeMap}
 						handleComplete={handleComplete}
 						handleSave={handleSave}
-						setShowExerciseDescription={setShowExerciseDescription}
+						setModalContent={setModalContent}
 					/>
 				) : (
 					<div className='grid grid-cols-4 gap-4 auto-rows-fr'>

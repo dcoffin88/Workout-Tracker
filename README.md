@@ -20,6 +20,6 @@ Workout Tracker is a **Push → Core/Legs → Pull → Optional** rotation:
 
 ---
 
-## How to Start with Brogram
+## How to Start with Workout-Tracker
 
 To get started with Workout Tracker, visit the app at [fitness.thecoffins.ca](https://fitness.thecoffins.ca). There, you’ll find all the workouts, trackable progress, and more information. Simply follow along with the rotations, adjust your weights and sets as needed.

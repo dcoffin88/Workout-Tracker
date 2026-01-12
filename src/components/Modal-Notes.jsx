@@ -1,8 +1,8 @@
 import ReactDom from 'react-dom'
 
 export default function NoteModal(props) {
-    const { showExerciseDescription, handleCloseModal } = props
-    const { name, description } = showExerciseDescription || {}
+    const { content, handleCloseModal } = props
+    const { name, description } = content || {}
     return ReactDom.createPortal(
         <div className='fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/50'>
 			<div onClick={handleCloseModal} className='absolute inset-0' />
