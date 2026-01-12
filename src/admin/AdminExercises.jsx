@@ -121,6 +121,21 @@ export default function AdminExercises() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!draft?.id) return;
+    const confirmed = window.confirm('Delete this exercise? It will be removed from any workouts.');
+    if (!confirmed) return;
+    try {
+      await adminFetch(`/api/admin/exercises/${draft.id}`, { method: 'DELETE' });
+      setDraft(null);
+      setSelectedId(null);
+      await loadExercises();
+    } catch (error) {
+      console.error(error);
+      setStatus('Delete failed.');
+    }
+  };
+
   useEffect(() => {
     if (!selectedId && exercises.length > 0) {
       selectExercise(exercises[0]);
@@ -257,6 +272,14 @@ export default function AdminExercises() {
               >
                 {saving ? 'Saving...' : 'Save Exercise'}
               </button>
+              {draft.id && (
+                <button
+                  onClick={handleDelete}
+                  className="px-5 py-2 rounded-lg bg-red-500 text-white font-bold"
+                >
+                  Delete Exercise
+                </button>
+              )}
               {status && <span className="text-sm text-slate-400">{status}</span>}
             </div>
           </div>

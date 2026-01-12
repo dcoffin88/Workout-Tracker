@@ -349,6 +349,26 @@ app.put('/api/admin/exercises/:id', requireAdminPin, async (req, res) => {
   }
 });
 
+app.delete('/api/admin/exercises/:id', requireAdminPin, async (req, res) => {
+  try {
+    const exerciseId = Number(req.params.id);
+    if (!exerciseId) {
+      return res.status(400).json({ error: 'Invalid exercise id.' });
+    }
+
+    await run('BEGIN TRANSACTION');
+    await run('DELETE FROM workout_items WHERE exercise_id = ?', [exerciseId]);
+    await run('DELETE FROM exercise_images WHERE exercise_id = ?', [exerciseId]);
+    await run('DELETE FROM exercises WHERE id = ?', [exerciseId]);
+    await run('COMMIT');
+    return res.json({ ok: true });
+  } catch (error) {
+    await run('ROLLBACK');
+    console.error(error);
+    return res.status(500).json({ error: 'Failed to delete exercise.' });
+  }
+});
+
 app.get('/api/admin/workouts', requireAdminPin, async (req, res) => {
   try {
     const workouts = await all(
@@ -359,7 +379,7 @@ app.get('/api/admin/workouts', requireAdminPin, async (req, res) => {
     );
     const items = await all(
       `SELECT wi.workout_id, wi.section_id, wi.group_index, wi.item_index,
-              wi.sets, wi.reps, wi.weight, wi.exercise_id, e.name
+              wi.exercise_id, e.name
        FROM workout_items wi
        JOIN exercises e ON e.id = wi.exercise_id
        ORDER BY wi.workout_id, wi.section_id, wi.group_index, wi.item_index`
@@ -383,9 +403,6 @@ app.get('/api/admin/workouts', requireAdminPin, async (req, res) => {
       const exercise = {
         exerciseId: item.exercise_id,
         name: item.name,
-        sets: item.sets || '',
-        reps: item.reps || '',
-        weight: item.weight || '',
       };
 
       if (section.isSuperset) {

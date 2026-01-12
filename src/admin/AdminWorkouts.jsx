@@ -10,9 +10,6 @@ const emptyWorkout = {
 
 const emptyItem = () => ({
   exerciseId: '',
-  sets: '',
-  reps: '',
-  weight: '',
 });
 
 export default function AdminWorkouts() {
@@ -199,12 +196,23 @@ export default function AdminWorkouts() {
     const payload = {
       dayIndex: Number(draft.dayIndex),
       title: draft.title.trim(),
-      sections: draft.sections.map((section, index) => ({
-        name: section.name,
-        position: index,
-        isSuperset: !!section.isSuperset,
-        items: section.items,
-      })),
+      sections: draft.sections.map((section, index) => {
+        const items = section.isSuperset
+          ? (Array.isArray(section.items) ? section.items : []).map((group) =>
+              (Array.isArray(group) ? group : []).map((item) => ({
+                exerciseId: item.exerciseId,
+              }))
+            )
+          : (Array.isArray(section.items) ? section.items : []).map((item) => ({
+              exerciseId: item.exerciseId,
+            }));
+        return {
+          name: section.name,
+          position: index,
+          isSuperset: !!section.isSuperset,
+          items,
+        };
+      }),
     };
 
     try {
@@ -368,7 +376,7 @@ export default function AdminWorkouts() {
                       {(Array.isArray(section.items) ? section.items : []).map((item, itemIndex) => (
                         <div
                           key={`item-${sectionIndex}-${itemIndex}`}
-                          className="grid md:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2"
+                          className="grid md:grid-cols-[2fr_auto] gap-2"
                         >
                           <select
                             value={item.exerciseId}
@@ -386,36 +394,6 @@ export default function AdminWorkouts() {
                               </option>
                             ))}
                           </select>
-                          <input
-                            value={item.sets}
-                            onChange={(event) =>
-                              updateItem(sectionIndex, itemIndex, {
-                                sets: event.target.value,
-                              })
-                            }
-                            placeholder="Sets"
-                            className="px-3 py-2 rounded-lg bg-slate-900 dark:bg-gray-100 border border-slate-700 dark:border-gray-300"
-                          />
-                          <input
-                            value={item.reps}
-                            onChange={(event) =>
-                              updateItem(sectionIndex, itemIndex, {
-                                reps: event.target.value,
-                              })
-                            }
-                            placeholder="Reps"
-                            className="px-3 py-2 rounded-lg bg-slate-900 dark:bg-gray-100 border border-slate-700 dark:border-gray-300"
-                          />
-                          <input
-                            value={item.weight}
-                            onChange={(event) =>
-                              updateItem(sectionIndex, itemIndex, {
-                                weight: event.target.value,
-                              })
-                            }
-                            placeholder="Weight"
-                            className="px-3 py-2 rounded-lg bg-slate-900 dark:bg-gray-100 border border-slate-700 dark:border-gray-300"
-                          />
                           <button
                             onClick={() => removeItem(sectionIndex, itemIndex)}
                             className="px-3 py-2 rounded-lg bg-red-500 text-white"
@@ -452,7 +430,7 @@ export default function AdminWorkouts() {
                             {(Array.isArray(group) ? group : []).map((item, itemIndex) => (
                               <div
                                 key={`group-item-${sectionIndex}-${groupIndex}-${itemIndex}`}
-                                className="grid md:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2"
+                                className="grid md:grid-cols-[2fr_auto] gap-2"
                               >
                                 <select
                                   value={item.exerciseId}
@@ -470,36 +448,6 @@ export default function AdminWorkouts() {
                                     </option>
                                   ))}
                                 </select>
-                                <input
-                                  value={item.sets}
-                                  onChange={(event) =>
-                                    updateItem(sectionIndex, itemIndex, {
-                                      sets: event.target.value,
-                                    }, groupIndex)
-                                  }
-                                  placeholder="Sets"
-                                  className="px-3 py-2 rounded-lg bg-slate-900 dark:bg-gray-100 border border-slate-700 dark:border-gray-300"
-                                />
-                                <input
-                                  value={item.reps}
-                                  onChange={(event) =>
-                                    updateItem(sectionIndex, itemIndex, {
-                                      reps: event.target.value,
-                                    }, groupIndex)
-                                  }
-                                  placeholder="Reps"
-                                  className="px-3 py-2 rounded-lg bg-slate-900 dark:bg-gray-100 border border-slate-700 dark:border-gray-300"
-                                />
-                                <input
-                                  value={item.weight}
-                                  onChange={(event) =>
-                                    updateItem(sectionIndex, itemIndex, {
-                                      weight: event.target.value,
-                                    }, groupIndex)
-                                  }
-                                  placeholder="Weight"
-                                  className="px-3 py-2 rounded-lg bg-slate-900 dark:bg-gray-100 border border-slate-700 dark:border-gray-300"
-                                />
                                 <button
                                   onClick={() =>
                                     removeItem(sectionIndex, itemIndex, groupIndex)
