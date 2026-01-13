@@ -5,6 +5,6 @@ services:
       dockerfile: Dockerfile
     container_name: fitness
     ports:
-      - 5173:80
+      - 5173:3001
     restart: unless-stopped
     network_mode: bridge

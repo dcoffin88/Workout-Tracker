@@ -250,7 +250,7 @@ export default function Grid() {
 							  
 							if (planIndex === undefined) return null;
 							
-							const type = typeMap[planIndex] || 'Workout';
+							const workoutTitle = trainingPlan?.[planIndex]?.title || typeMap[planIndex] || 'Workout';
 							
 							const isTodayGrid = isSameDay(day.date, today);
 							
@@ -283,7 +283,7 @@ export default function Grid() {
 											className='text-lg font-bold w-full'
 											style={{ whiteSpace: 'nowrap' }} // Use a non-breaking space for initial measurement
 										>
-											<b>{type}</b>
+											<b>{workoutTitle}</b>
 										</h4>
 									</div>
 								</button>

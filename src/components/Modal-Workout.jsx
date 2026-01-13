@@ -16,6 +16,8 @@ export default function ModalWorkout({
 
   const workoutDateString = format(selectedWorkout.date, 'yyyy-MM-dd');
   const workoutPlan = trainingPlan?.[selectedWorkout.planIndex];
+  const workoutTitle = workoutPlan?.title || typeMap[selectedWorkout.planIndex] || 'Workout';
+  const iconKey = typeMap[selectedWorkout.planIndex] || 'Workout';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/50">
@@ -24,7 +26,8 @@ export default function ModalWorkout({
           key={selectedWorkout.workoutIndex}
           workoutIndex={selectedWorkout.workoutIndex}
           trainingPlan={workoutPlan}
-          type={typeMap[selectedWorkout.planIndex] || 'Workout'}
+          type={workoutTitle}
+          iconKey={iconKey}
           savedWeights={savedWorkouts?.[workoutDateString]?.weights}
           savedDoneStatus={savedWorkouts?.[workoutDateString]?.doneStatus}
           handleComplete={handleComplete}

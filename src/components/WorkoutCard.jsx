@@ -5,6 +5,7 @@ export default function WorkoutCard(props) {
 	const {
 		workoutIndex,
 		type,
+		iconKey,
 		handleComplete,
 		handleSave,
 		trainingPlan,
@@ -87,7 +88,7 @@ export default function WorkoutCard(props) {
 		Pull: 'fa-weight-hanging',
 		Optional: 'fa-heart-pulse'
 	}
-	const icon = iconMap[type]
+	const icon = iconMap[iconKey || type]
 	
 	return (
 		<div className='flex flex-col p-4 sm:p-6 bg-slate-900 dark:bg-gray-100 text-slate-100 dark:text-gray-900 font-inter'>
